@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Student Management App</title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 2rem; }
+		table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+		th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+		th { background: #f0f0f0; }
+		form { margin-top: 2rem; }
+		input, button { padding: 6px; margin: 4px; }
+	</style>
+</head>
+<body>
+	<h1>Student Management App</h1>
+
+	<h2>Daftar Student</h2>
+	<table id="studentsTable">
+		<thead>
+			<tr>
+				<th>NIM</th>
+				<th>Full Name</th>
+				<th>Date of Birth</th>
+				<th>Address</th>
+			</tr>
+		</thead>
+		<tbody id="studentsBody">
+			<!-- Data will be inserted here -->
+		</tbody>
+	</table>
+
+	<h2>Tambah Student Baru</h2>
+	<form id="studentForm">
+		<input type="text" id="nim" placeholder="NIM" required />
+		<input type="text" id="fullName" placeholder="Full Name" required />
+		<input type="date" id="dob" placeholder="Date of Birth" required />
+		<input type="text" id="address" placeholder="Address" required />
+		<button type="submit">Tambah</button>
+	</form>
+
+	<script>
+		async function fetchStudents() {
+			const res = await fetch('/students');
+			const students = await res.json();
+			const tbody = document.getElementById('studentsBody');
+			tbody.innerHTML = '';
+			students.forEach(s => {
+				const tr = document.createElement('tr');
+				tr.innerHTML = `<td>${s.nim}</td><td>${s.fullName}</td><td>${s.dob}</td><td>${s.address}</td>`;
+				tbody.appendChild(tr);
+			});
+		}
+
+		document.getElementById('studentForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+			const nim = document.getElementById('nim').value;
+			const fullName = document.getElementById('fullName').value;
+			const dob = document.getElementById('dob').value;
+			const address = document.getElementById('address').value;
+			const student = { nim, fullName, dob, address };
+			const res = await fetch('/students', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(student)
+			});
+			if (res.ok) {
+				document.getElementById('studentForm').reset();
+				fetchStudents();
+			} else {
+				alert('Gagal menambah student!');
+			}
+		});
+
+		// Initial load
+		fetchStudents();
+	</script>
+</body>
+</html>
