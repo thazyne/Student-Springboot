@@ -4,9 +4,8 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class Student {
+public class StudentRequest {
 
-    private String nim;
     private String fullName;
     private String address;
     private LocalDate dob;
