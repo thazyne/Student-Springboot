@@ -17,6 +17,7 @@ public class StudentController {
 
     private final StudentService studentService;
 
+
     @GetMapping
     public List<Student> getStudents() {
         return studentService.getStudents();
@@ -24,7 +25,26 @@ public class StudentController {
 
     @PostMapping
     public ResponseEntity<Student> addStudent(@RequestBody StudentRequest request) {
-        Student created = studentService.addStudent(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        Student createdStudent = studentService.addStudent(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdStudent);
+    }
+
+    @GetMapping("/{nim}")
+    public ResponseEntity<Student> getStudentByNim(@PathVariable String nim) {
+        Student student = studentService.findStudentByNim(nim);
+        return ResponseEntity.ok(student);
+    }
+
+
+    @PutMapping("/{nim}")
+    public ResponseEntity<Student> updateStudent(@PathVariable String nim, @RequestBody StudentRequest request) {
+        Student updatedStudent = studentService.updateStudent(nim, request);
+        return ResponseEntity.ok(updatedStudent);
+    }
+
+    @DeleteMapping("/{nim}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable String nim) {
+        studentService.deleteStudent(nim);
+        return ResponseEntity.noContent().build();
     }
 }

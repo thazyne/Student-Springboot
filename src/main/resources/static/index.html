@@ -5,12 +5,88 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Student Management App</title>
 	<style>
-		body { font-family: Arial, sans-serif; margin: 2rem; }
-		table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-		th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-		th { background: #f0f0f0; }
-		form { margin-top: 2rem; }
-		input, button { padding: 6px; margin: 4px; }
+		body {
+			font-family: 'IBM Plex Mono', monospace;
+			background: #fffbe6;
+			color: #222;
+			margin: 0;
+			padding: 2rem;
+		}
+		h1, h2 {
+			font-weight: 900;
+			text-transform: uppercase;
+			letter-spacing: 2px;
+			background: #ffde59;
+			border: 4px solid #222;
+			padding: 0.5rem 1rem;
+			display: inline-block;
+			box-shadow: 6px 6px 0 #222;
+		}
+		table {
+			border-collapse: separate;
+			border-spacing: 0;
+			width: 100%;
+			margin-top: 1rem;
+			background: #fff;
+			border: 4px solid #222;
+			box-shadow: 8px 8px 0 #222;
+		}
+		th, td {
+			border: 2px solid #222;
+			padding: 12px 10px;
+			text-align: left;
+			font-size: 1rem;
+		}
+		th {
+			background: #ffde59;
+			font-weight: 700;
+			text-transform: uppercase;
+		}
+		form {
+			margin-top: 2rem;
+			background: #fff;
+			border: 4px solid #222;
+			padding: 1rem;
+			box-shadow: 6px 6px 0 #222;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		input {
+			border: 2px solid #222;
+			background: #ffde59;
+			color: #222;
+			font-family: inherit;
+			font-size: 1rem;
+			padding: 8px;
+			outline: none;
+			box-shadow: 2px 2px 0 #222;
+		}
+		button {
+			border: 2px solid #222;
+			background: #222;
+			color: #ffde59;
+			font-family: inherit;
+			font-size: 1rem;
+			font-weight: 700;
+			padding: 8px 16px;
+			cursor: pointer;
+			box-shadow: 2px 2px 0 #222;
+			transition: background 0.2s;
+		}
+		button:hover {
+			background: #ffde59;
+			color: #222;
+		}
+		.error {
+			background: #ff4d4d;
+			color: #fff;
+			border: 2px solid #222;
+			padding: 8px;
+			margin-top: 1rem;
+			font-weight: bold;
+			box-shadow: 2px 2px 0 #222;
+		}
 	</style>
 </head>
 <body>
@@ -24,6 +100,7 @@
 				<th>Full Name</th>
 				<th>Date of Birth</th>
 				<th>Address</th>
+				<th>Aksi</th>
 			</tr>
 		</thead>
 		<tbody id="studentsBody">
@@ -31,14 +108,30 @@
 		</tbody>
 	</table>
 
+	<!-- Modal Edit -->
+	<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
+		<div style="background:#fff; border:4px solid #222; box-shadow:8px 8px 0 #222; padding:2rem; min-width:300px; position:relative;">
+			<h2>Edit Student</h2>
+			<form id="editForm">
+				<input type="hidden" id="editNim" />
+				<input type="text" id="editFullName" placeholder="Full Name" required />
+				<input type="date" id="editDob" placeholder="Date of Birth" required />
+				<input type="text" id="editAddress" placeholder="Address" required />
+				<button type="submit">Update</button>
+				<button type="button" id="closeEditModal" style="background:#ff4d4d; color:#fff; margin-left:8px;">Batal</button>
+			</form>
+		</div>
+	</div>
+
 	<h2>Tambah Student Baru</h2>
 	<form id="studentForm">
-		<input type="text" id="nim" placeholder="NIM" required />
+		<!-- <input type="text" id="nim" placeholder="NIM" required /> --> <!-- NIM dihapus -->
 		<input type="text" id="fullName" placeholder="Full Name" required />
 		<input type="date" id="dob" placeholder="Date of Birth" required />
 		<input type="text" id="address" placeholder="Address" required />
 		<button type="submit">Tambah</button>
 	</form>
+	<div id="errorMsg" class="error" style="display:none"></div>
 
 	<script>
 		async function fetchStudents() {
@@ -48,18 +141,84 @@
 			tbody.innerHTML = '';
 			students.forEach(s => {
 				const tr = document.createElement('tr');
-				tr.innerHTML = `<td>${s.nim}</td><td>${s.fullName}</td><td>${s.dob}</td><td>${s.address}</td>`;
+				tr.innerHTML = `
+					<td>${s.nim}</td>
+					<td>${s.fullName}</td>
+					<td>${s.dob}</td>
+					<td>${s.address}</td>
+					<td>
+						<button onclick="openEditModal('${s.nim}', '${s.fullName.replace(/'/g, "\'")}', '${s.dob}', '${s.address.replace(/'/g, "\'")}')">Edit</button>
+						<button onclick="deleteStudent('${s.nim}')" style="background:#ff4d4d; color:#fff; margin-left:4px;">Delete</button>
+					</td>
+				`;
 				tbody.appendChild(tr);
 			});
+		}
+		// Modal Edit logic
+		function openEditModal(nim, fullName, dob, address) {
+			document.getElementById('editNim').value = nim;
+			document.getElementById('editFullName').value = fullName;
+			document.getElementById('editDob').value = dob;
+			document.getElementById('editAddress').value = address;
+			document.getElementById('editModal').style.display = 'flex';
+		}
+		document.getElementById('closeEditModal').onclick = function() {
+			document.getElementById('editModal').style.display = 'none';
+		};
+
+		document.getElementById('editForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+			hideError();
+			const nim = document.getElementById('editNim').value;
+			const fullName = document.getElementById('editFullName').value;
+			const dob = document.getElementById('editDob').value;
+			const address = document.getElementById('editAddress').value;
+			const student = { fullName, dob, address };
+			const res = await fetch(`/students/${nim}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(student)
+			});
+			if (res.ok) {
+				document.getElementById('editModal').style.display = 'none';
+				fetchStudents();
+			} else {
+				const errorText = await res.text();
+				showError(errorText || 'Gagal update student!');
+			}
+		});
+
+		// Delete logic
+		async function deleteStudent(nim) {
+			if (!confirm('Yakin ingin menghapus student ini?')) return;
+			hideError();
+			const res = await fetch(`/students/${nim}`, { method: 'DELETE' });
+			if (res.ok) {
+				fetchStudents();
+			} else {
+				const errorText = await res.text();
+				showError(errorText || 'Gagal menghapus student!');
+			}
+		}
+
+		function showError(msg) {
+			const errorDiv = document.getElementById('errorMsg');
+			errorDiv.textContent = msg;
+			errorDiv.style.display = 'block';
+		}
+		function hideError() {
+			const errorDiv = document.getElementById('errorMsg');
+			errorDiv.style.display = 'none';
 		}
 
 		document.getElementById('studentForm').addEventListener('submit', async function(e) {
 			e.preventDefault();
-			const nim = document.getElementById('nim').value;
+			hideError();
+			// const nim = document.getElementById('nim').value; // NIM dihapus
 			const fullName = document.getElementById('fullName').value;
 			const dob = document.getElementById('dob').value;
 			const address = document.getElementById('address').value;
-			const student = { nim, fullName, dob, address };
+			const student = { fullName, dob, address }; // NIM tidak dikirim
 			const res = await fetch('/students', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -69,7 +228,8 @@
 				document.getElementById('studentForm').reset();
 				fetchStudents();
 			} else {
-				alert('Gagal menambah student!');
+				const errorText = await res.text();
+				showError(errorText || 'Gagal menambah student!');
 			}
 		});
 
